@@ -8,7 +8,7 @@ var app=new Vue({
 		defaultWidth:640,
 		beat:4,
 		width:640,
-		height:840,
+		height:900,
 		color:'#4169E1',
 		rectList:{},
 		rectNum: 0,
@@ -22,7 +22,7 @@ var app=new Vue({
 			this.width+=this.defaultWidth;
 			this.canvas.width=this.width;
 			this.drawDivider(this.beat);
-			this.drawAllRect();
+			this.drawAllNote();
 			return;
 		},
 		searchClickRect:function(mousex,mousey){
@@ -48,7 +48,7 @@ var app=new Vue({
 			const y=e.clientY - offsetY;
 			const index = this.searchClickRect(x,y);
 			if(index==-1){
-				this.addRect(e,color);
+				this.addNote(e,color);
 			}else{
 				this.isDrag=true;
 				this.draggingIndex=index;
@@ -112,7 +112,7 @@ var app=new Vue({
 			return;
 		},
 		//クリックした座標に長方形を追加
-		addRect:function(e,color){
+		addNote:function(e,color){
 			let x=e.layerX;
 			let y=e.layerY;
 			const h=this.height/this.keyboardRange;
@@ -120,32 +120,35 @@ var app=new Vue({
 			//キャンバス上の位置がマス目の中でどこに位置するかを調べる
 			x=Math.floor(x/noteSize)*noteSize;
 			y=Math.floor(y/h)*h;
-			this.context.fillStyle=color;
-			this.context.fillRect(x,y,noteSize,h);
+			this.drawNote(x,y,noteSize,h,color);
 			this.rectList[this.rectNum]
-			={rawX:x,rawY:y,fixedX:x/(noteSize/(16/this.beat)),fixedY:y/30,width:noteSize,height:h,color:color};
+			={rawX:x,rawY:y,fixedX:x/(noteSize/(16/this.beat)),fixedY:y/h,width:noteSize,height:h,color:color};
 			this.rectNum++;
 			return;
 		},
 		//ノートの描画
-		// drawNote:function(x,y,width,height,color){
-
-		// },
+		drawNote:function(x,y,width,height,color){
+			//ここを変える
+			this.context.fillStyle="#000000";
+			this.context.fillRect(x,y,width,height);
+			this.context.fillStyle=color;
+			this.context.fillRect(x+2,y+2,width-4,height-4);
+		},
 		//描画のやり直し
 		drawAll:function(){
 			this.context.clearRect(0,0,this.canvas.width,this.canvas.height);
 			this.drawDivider(this.beat);
-			this.drawAllRect();
+			this.drawAllNote();
 		},
-		drawAllRect:function(){
+		drawAllNote:function(){
 			for(let key in this.rectList){
-				this.context.fillStyle=this.rectList[key].color;
-				this.context.fillRect(this.rectList[key].rawX,this.rectList[key].rawY,
-					this.rectList[key].width,this.rectList[key].height);
+				this.drawNote(this.rectList[key].rawX,this.rectList[key].rawY,
+					this.rectList[key].width,this.rectList[key].height,
+					this.rectList[key].color);
 			}
 		},
 		drawDivider:function(beat){
-			this.context.strokeStyle="rgb(38,38,38)";
+			this.context.strokeStyle="#708090";
 			//横の色
 			for(let i=0;i<this.keyboardRange;i++){
 				if(this.keyboardFlag[i]==1)
