@@ -12,7 +12,7 @@ var app=new Vue({
 		color:'#4169E1',
 		rectList:{},
 		rectNum: 0,
-		isDrag:false,
+		dragStatus:-1,
 		draggingIndex: -1,
 		relx:0,
 		rely:0,
@@ -50,24 +50,49 @@ var app=new Vue({
 			if(index==-1){
 				this.addNote(e,color);
 			}else{
-				this.isDrag=true;
+				//ノートの移動か引き伸ばしかを判定する
 				this.draggingIndex=index;
 				this.relx=this.rectList[index].rawX-x;
 				this.rely=this.rectList[index].rawY-y;
+				const left=this.rectList[index].rawX+Math.max(10,this.rectList[index].width/8);
+				const right=(this.rectList[index].rawX+this.rectList[index].width)
+								-Math.max(10,this.rectList[index].width/8);
+				//真ん中ならノートの移動
+				if(left<=x && x<=right){
+					this.dragStatus=1;
+				}else if(x<left){
+					//左側なら左へ引き伸ばし
+					this.dragStatus=2;
+				}else if(x>right){
+					//右側なら右へ引き伸ばし
+					this.dragStatus=3;
+				}
+				console.log(this.dragStatus);
 			}
 			return;
 		},
 		//選択した図形をドラッグしているときの処理
 		onDrag:function(e){
-			if(!this.isDrag){
+			if(this.dragStatus==-1){
 				return;
 			}
 			//キャンバスの左上の座標を取得
 			const offsetX = this.canvas.getBoundingClientRect().left;
 			const offsetY = this.canvas.getBoundingClientRect().top;
 			//マウスが押されたcanvas上の座標を取得
-			const x=e.clientX - offsetX + this.relx + this.rectList[this.draggingIndex].width/40;
+			let x=e.clientX - offsetX;
 			const y=e.clientY - offsetY;
+			switch(this.dragStatus){
+				case 1:
+					this.moveNote(x,y); break;
+				case 2:
+					this.extendNoteLeft(x,y); break;
+				case 3:
+					this.extendNoteRight(x,y); break;
+			}
+		},
+		moveNote:function(x,y){
+			x+=this.rectList[this.draggingIndex].width/40+this.relx;
 			const h=this.height/this.keyboardRange;
 			//console.log(x+", "+y);
 			const noteSize=this.defaultWidth/this.beat;
@@ -77,9 +102,8 @@ var app=new Vue({
 			//マス目上に修正された座標を調べる
 			const fixedX=RawX/(noteSize/(16/this.beat));
 			const fixedY=RawY/h;
-			//ドラッグされていて、fixedの位置が変わっていれば描画オブジェクトの位置を更新して描画
-			if(this.isDrag &&
-				!(fixedX==this.rectList[this.draggingIndex].fixedX &&
+			//fixedの位置が変わっていれば描画オブジェクトの位置を更新して描画
+			if(!(fixedX==this.rectList[this.draggingIndex].fixedX &&
 					fixedY==this.rectList[this.draggingIndex].fixedY )
 			  ){
 				this.rectList[this.draggingIndex].rawX=RawX;
@@ -89,9 +113,56 @@ var app=new Vue({
 				this.drawAll();
 			}
 		},
+		extendNoteLeft:function(x,y){
+			//現在のマス目のサイズを調べる
+			const noteSize=this.defaultWidth/this.beat;
+			const h=this.height/this.keyboardRange;
+			//右端は変わらないので右端を保持
+			const right=
+			this.rectList[this.draggingIndex].rawX+this.rectList[this.draggingIndex].width;
+			//キャンバス上の位置がマス目の中でどの座標に位置するかを調べる
+			const RawX=Math.floor(x/noteSize)*noteSize;
+			//rawの情報からどのマス目かを調べる
+			const fixedX=RawX/(noteSize/(16/this.beat));
+			//右端より右に行っていない　かつ　
+			//fixedXの位置が変わっていれば、描画オブジェクトの位置を更新して描画
+			if(RawX<right && fixedX!=this.rectList[this.draggingIndex].fixedX){
+				if(RawX<this.rectList[this.draggingIndex].rawX)
+					this.rectList[this.draggingIndex].width+=noteSize;
+				else
+					this.rectList[this.draggingIndex].width-=noteSize;
+				this.rectList[this.draggingIndex].rawX=RawX;
+				this.rectList[this.draggingIndex].fixedX=fixedX;
+				this.drawAll();
+			}
+		},
+		extendNoteRight:function(x,y){
+			//現在のマス目のサイズを調べる
+			const noteSize=this.defaultWidth/this.beat;
+			const h=this.height/this.keyboardRange;
+			//左端は変わらない
+			const left=this.rectList[this.draggingIndex].rawX;
+			//右端も持つ
+			const right=left+this.rectList[this.draggingIndex].width;
+			const fixedRight=right/(noteSize/(16/this.beat));
+			//キャンバス上の位置がマス目の中でどの座標に位置するかを調べる
+			const RawX=Math.floor(x/noteSize)*noteSize;
+			//rawの情報からどのマス目かを調べる
+			const fixedX=RawX/(noteSize/(16/this.beat));
+			console.log(fixedRight+" "+fixedX);
+			//左端より左に行っていない　かつ　
+			//fixedXの位置が変わっていれば、描画オブジェクトの位置を更新して描画
+			if(RawX>left && fixedX!=fixedRight){
+				if(RawX>right)
+					this.rectList[this.draggingIndex].width+=noteSize;
+				else
+					this.rectList[this.draggingIndex].width-=noteSize;
+				this.drawAll();
+			}
+		},
 		//ドラッグの終了
 		onMouseLeftUp:function(){
-			this.isDrag=false;
+			this.dragStatus=-1;
 			this.draggingIndex=-1;
 		},
 		//右クリックしたときの処理
