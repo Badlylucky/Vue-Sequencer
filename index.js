@@ -51,6 +51,7 @@ var app = new Vue({
 			if (index == -1) {
 				//見つからなかったらノートの追加
 				//もしくは矩形選択
+				this.dragStatus=0;
 				this.relx=x;
 				this.rely=y;
 			} else {
@@ -77,15 +78,24 @@ var app = new Vue({
 		},
 		//選択した図形をドラッグしているときの処理
 		onDrag: function (e) {
-			if (this.dragStatus == -1) {
+			if(this.dragStatus==-1)
 				return;
-			}
 			//キャンバスの左上の座標を取得
 			const offsetX = this.canvas.getBoundingClientRect().left;
 			const offsetY = this.canvas.getBoundingClientRect().top;
 			//マウスが押されたcanvas上の座標を取得
-			let x = e.clientX - offsetX;
+			const x = e.clientX - offsetX;
 			const y = e.clientY - offsetY;
+			if (this.dragStatus == 0) {
+				//選択範囲を示す矩形を描画する
+				this.drawAll();
+				this.context.globalAlpha=0.2;
+				this.context.fillStyle="#87cefa";
+				this.context.fillRect(Math.min(this.relx,x),Math.min(this.rely,y),
+				Math.abs(this.relx-x),Math.abs(this.rely-y));
+				this.context.globalAlpha=1.0;
+				return;
+			}
 			switch (this.dragStatus) {
 				case 1:
 					this.moveNote(x, y); break;
@@ -110,10 +120,27 @@ var app = new Vue({
 			if (!(fixedX == this.noteList[this.draggingIndex].fixedX &&
 				fixedY == this.noteList[this.draggingIndex].fixedY)
 			) {
+				//移動量を求めておく
+				const difx=RawX-this.noteList[this.draggingIndex].rawX;
+				const dify=RawY-this.noteList[this.draggingIndex].rawY;
 				this.noteList[this.draggingIndex].rawX = RawX;
 				this.noteList[this.draggingIndex].rawY = RawY;
 				this.noteList[this.draggingIndex].fixedX = fixedX;
 				this.noteList[this.draggingIndex].fixedY = fixedY;
+				if(this.noteList[this.draggingIndex].selected){
+					//選択された要素の場合、全ての要素を移動
+					for(let i=0;i<this.nowSelect.length;i++){
+						if(this.nowSelect[i]==this.draggingIndex)
+							continue;
+						this.noteList[this.nowSelect[i]].rawX+=difx;
+						this.noteList[this.nowSelect[i]].rawY+=dify;
+						//rawX, rawYからfixedX,fixedYを計算する 
+						this.noteList[this.nowSelect[i]].fixedX=
+						this.noteList[this.nowSelect[i]].rawX/(noteSize/(16/this.beat));
+						this.noteList[this.nowSelect[i]].fixedY=
+						this.noteList[this.nowSelect[i]]/h;
+					}
+				}
 				this.drawAll();
 			}
 		},
@@ -166,7 +193,7 @@ var app = new Vue({
 		},
 		//ドラッグの終了
 		onMouseLeftUp: function (e) {
-			if(this.dragStatus==-1){
+			if(this.dragStatus==0){
 				//移動量がx,yともに10pxに満たなければノート配置
 				//満たすなら矩形選択
 				//キャンバスの左上の座標を取得
@@ -175,12 +202,21 @@ var app = new Vue({
 				//マウスが押されたcanvas上の座標を取得
 				const x = e.clientX - offsetX;
 				const y = e.clientY - offsetY;
-				if(Math.abs(x-this.relx)<10 && Math.abs(y-this.rely)<10){
-					this.addNote(e,this.color);
+				if(Math.abs(x-this.relx)<5 && Math.abs(y-this.rely)<5){
+					if(this.nowSelect.length==0)
+						this.addNote(e,this.color);
 				}else{
+					this.rectangleDeselect();
 					this.rectangleSelect(Math.min(x,this.relx),Math.min(y,this.rely),
-											Math.max(x,this.relx),Math.max(y,this.rely));
+					Math.max(x,this.relx),Math.max(y,this.rely));
+					this.dragStatus = -1;
+					this.draggingIndex = -1;
+					return;
 				}
+			}
+			if(this.nowSelect.length>0 && this.dragStatus!=1){
+				this.rectangleDeselect();
+				this.drawAll();
 			}
 			this.dragStatus = -1;
 			this.draggingIndex = -1;
@@ -188,7 +224,7 @@ var app = new Vue({
 		//矩形選択
 		rectangleSelect:function(minx,miny,maxx,maxy){
 			//すべてのノートについて調べる(O(N))
-			for (let key in this.noteList) {
+			for (const key in this.noteList) {
 				if (!((this.noteList[key].rawX+this.noteList[key].width<minx)||
 					  (this.noteList[key].rawX>maxx)||
 					  (this.noteList[key].rawY+this.noteList[key].height<miny)||
@@ -200,6 +236,15 @@ var app = new Vue({
 				}
 			}
 			this.drawAll();
+		},
+		//矩形選択の解除
+		rectangleDeselect:function(){
+			for(let i=0;i<this.nowSelect.length;i++){
+				if(this.nowSelect[i] in this.noteList)
+					this.noteList[this.nowSelect[i]].selected=false;
+			}
+			this.nowSelect.length=0;
+			return;
 		},
 		//右クリックしたときの処理
 		//クリックした場所が長方形の範囲内なら消す
@@ -213,8 +258,17 @@ var app = new Vue({
 			const y = e.clientY - offsetY;
 			const index = this.searchClickRect(x, y);
 			if (index != -1) {
-				delete (this.noteList[index]);
+				//選択されてない場合は普通に削除
+				if(!this.noteList[index].selected)
+					delete (this.noteList[index]);
+				else{
+					//選択されている場合は選択したものまとめて削除
+					for(let i=0;i<this.nowSelect.length;i++){
+						delete(this.noteList[this.nowSelect[i]]);
+					}
+				}
 			}
+			this.rectangleDeselect();
 			this.drawAll();
 			return;
 		},
