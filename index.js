@@ -94,6 +94,7 @@ var app = new Vue({
 					this.context.fillRect(Math.min(this.relx, x), Math.min(this.rely, y),
 						Math.abs(this.relx - x), Math.abs(this.rely - y));
 					this.context.globalAlpha = 1.0;
+					break;
 				case 1:
 					this.moveNote(x, y); break;
 				case 2:
