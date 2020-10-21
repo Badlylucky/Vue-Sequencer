@@ -13,6 +13,7 @@ var app = new Vue({
 		noteList: {},
 		rectNum: 0,
 		nowSelect: [],
+		onPathNoteX: 0,
 		dragStatus: -1,
 		draggingIndex: -1,
 		relx: 0,
@@ -26,6 +27,7 @@ var app = new Vue({
 			this.drawAllNote();
 			return;
 		},
+		//クリックした位置にあるノートを探索する(O(N))
 		searchClickRect: function (mousex, mousey) {
 			let ret = -1;
 			for (let key in this.noteList) {
@@ -36,6 +38,32 @@ var app = new Vue({
 				}
 			}
 			return ret;
+		},
+		//同じy座標でexpandする方向の延長上にあるノートを探索する
+		//mode=0...左方向への探索 mode=1...右方向への探索
+		searchPathNote:function(sourceIndex,mode){
+			const sourceY=this.noteList[sourceIndex].fixedY;
+			let sourceX=this.noteList[sourceIndex].rawX;
+			if(mode==1){
+				sourceX+=this.noteList[sourceIndex].width;
+				this.onPathNoteX=1e18; //仮の最大値
+			}else{
+				this.onPathNoteX=-1;
+			}
+			for(let key in this.noteList){
+				if(key==sourceIndex)
+					continue;
+				if(this.noteList[key].fixedY==sourceY){
+					if(mode==0 && this.noteList[key].rawX<sourceX){
+						this.onPathNoteX=
+						Math.max(this.noteList[key].rawX+this.noteList[key].width-1, this.onPathNoteX);
+					}else if(mode==1 && sourceX<this.noteList[key].rawX){
+						this.onPathNoteX=
+						Math.min(this.noteList[key].rawX+1, this.onPathNoteX);
+					}
+				}
+			}
+			return;
 		},
 		//左のマウスボタンを押したときの処理
 		//すでに配置した図形の範囲内でなければ図形を配置
@@ -67,9 +95,11 @@ var app = new Vue({
 					this.dragStatus = 1;
 				} else if (x < left) {
 					//左側なら左へ引き伸ばし
+					this.searchPathNote(index,0);
 					this.dragStatus = 2;
 				} else if (x > right) {
 					//右側なら右へ引き伸ばし
+					this.searchPathNote(index,1);
 					this.dragStatus = 3;
 				}
 			}
@@ -152,9 +182,9 @@ var app = new Vue({
 			const RawX = Math.floor(x / noteSize) * noteSize;
 			//rawの情報からどのマス目かを調べる
 			const fixedX = RawX / (noteSize / (16 / this.beat));
-			//右端より右に行っていない　かつ　
+			//元のノートの右端より右に行っていない　かつ　onPathNoteXに到達していない　かつ
 			//fixedXの位置が変わっていれば、描画オブジェクトの位置を更新して描画
-			if (RawX < right && fixedX != this.noteList[this.draggingIndex].fixedX) {
+			if (RawX < right && fixedX != this.noteList[this.draggingIndex].fixedX && RawX>this.onPathNoteX) {
 				if (RawX < this.noteList[this.draggingIndex].rawX)
 					this.noteList[this.draggingIndex].width += noteSize;
 				else
@@ -180,7 +210,7 @@ var app = new Vue({
 			//console.log(fixedRight + " " + fixedX);
 			//左端より左に行っていない　かつ　
 			//fixedXの位置が変わっていれば、描画オブジェクトの位置を更新して描画
-			if (RawX > left && fixedX != fixedRight) {
+			if (RawX > left && fixedX != fixedRight && RawX<this.onPathNoteX) {
 				if (RawX > right)
 					this.noteList[this.draggingIndex].width += noteSize;
 				else
