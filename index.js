@@ -10,8 +10,9 @@ var app = new Vue({
 		width: 640,
 		height: 900,
 		color: '#4169E1',
-		rectList: {},
+		noteList: {},
 		rectNum: 0,
+		nowSelect:[],
 		dragStatus: -1,
 		draggingIndex: -1,
 		relx: 0,
@@ -27,9 +28,9 @@ var app = new Vue({
 		},
 		searchClickRect: function (mousex, mousey) {
 			let ret = -1;
-			for (let key in this.rectList) {
-				if (this.rectList[key].rawX < mousex && mousex < this.rectList[key].rawX + this.rectList[key].width &&
-					this.rectList[key].rawY < mousey && mousey < this.rectList[key].rawY + this.rectList[key].height) {
+			for (let key in this.noteList) {
+				if (this.noteList[key].rawX < mousex && mousex < this.noteList[key].rawX + this.noteList[key].width &&
+					this.noteList[key].rawY < mousey && mousey < this.noteList[key].rawY + this.noteList[key].height) {
 					ret = key;
 					break;
 				}
@@ -39,7 +40,7 @@ var app = new Vue({
 		//左のマウスボタンを押したときの処理
 		//すでに配置した図形の範囲内でなければ図形を配置
 		//範囲内ならドラッグ
-		onMouseLeftDown: function (e, color) {
+		onMouseLeftDown: function (e) {
 			//キャンバスの左上の座標を取得
 			const offsetX = this.canvas.getBoundingClientRect().left;
 			const offsetY = this.canvas.getBoundingClientRect().top;
@@ -48,15 +49,18 @@ var app = new Vue({
 			const y = e.clientY - offsetY;
 			const index = this.searchClickRect(x, y);
 			if (index == -1) {
-				this.addNote(e, color);
+				//見つからなかったらノートの追加
+				//もしくは矩形選択
+				this.relx=x;
+				this.rely=y;
 			} else {
 				//ノートの移動か引き伸ばしかを判定する
 				this.draggingIndex = index;
-				this.relx = this.rectList[index].rawX - x;
-				this.rely = this.rectList[index].rawY - y;
-				const left = this.rectList[index].rawX + Math.max(10, this.rectList[index].width / 8);
-				const right = (this.rectList[index].rawX + this.rectList[index].width)
-					- Math.max(10, this.rectList[index].width / 8);
+				this.relx = this.noteList[index].rawX - x;
+				this.rely = this.noteList[index].rawY - y;
+				const left = this.noteList[index].rawX + Math.max(10, this.noteList[index].width / 8);
+				const right = (this.noteList[index].rawX + this.noteList[index].width)
+					- Math.max(10, this.noteList[index].width / 8);
 				//真ん中ならノートの移動
 				if (left <= x && x <= right) {
 					this.dragStatus = 1;
@@ -92,7 +96,7 @@ var app = new Vue({
 			}
 		},
 		moveNote: function (x, y) {
-			x += this.rectList[this.draggingIndex].width / 40 + this.relx;
+			x += this.noteList[this.draggingIndex].width / 40 + this.relx;
 			const h = this.height / this.keyboardRange;
 			//console.log(x+", "+y);
 			const noteSize = this.defaultWidth / this.beat;
@@ -103,13 +107,13 @@ var app = new Vue({
 			const fixedX = RawX / (noteSize / (16 / this.beat));
 			const fixedY = RawY / h;
 			//fixedの位置が変わっていれば描画オブジェクトの位置を更新して描画
-			if (!(fixedX == this.rectList[this.draggingIndex].fixedX &&
-				fixedY == this.rectList[this.draggingIndex].fixedY)
+			if (!(fixedX == this.noteList[this.draggingIndex].fixedX &&
+				fixedY == this.noteList[this.draggingIndex].fixedY)
 			) {
-				this.rectList[this.draggingIndex].rawX = RawX;
-				this.rectList[this.draggingIndex].rawY = RawY;
-				this.rectList[this.draggingIndex].fixedX = fixedX;
-				this.rectList[this.draggingIndex].fixedY = fixedY;
+				this.noteList[this.draggingIndex].rawX = RawX;
+				this.noteList[this.draggingIndex].rawY = RawY;
+				this.noteList[this.draggingIndex].fixedX = fixedX;
+				this.noteList[this.draggingIndex].fixedY = fixedY;
 				this.drawAll();
 			}
 		},
@@ -119,20 +123,20 @@ var app = new Vue({
 			const h = this.height / this.keyboardRange;
 			//右端は変わらないので右端を保持
 			const right =
-				this.rectList[this.draggingIndex].rawX + this.rectList[this.draggingIndex].width;
+				this.noteList[this.draggingIndex].rawX + this.noteList[this.draggingIndex].width;
 			//キャンバス上の位置がマス目の中でどの座標に位置するかを調べる
 			const RawX = Math.floor(x / noteSize) * noteSize;
 			//rawの情報からどのマス目かを調べる
 			const fixedX = RawX / (noteSize / (16 / this.beat));
 			//右端より右に行っていない　かつ　
 			//fixedXの位置が変わっていれば、描画オブジェクトの位置を更新して描画
-			if (RawX < right && fixedX != this.rectList[this.draggingIndex].fixedX) {
-				if (RawX < this.rectList[this.draggingIndex].rawX)
-					this.rectList[this.draggingIndex].width += noteSize;
+			if (RawX < right && fixedX != this.noteList[this.draggingIndex].fixedX) {
+				if (RawX < this.noteList[this.draggingIndex].rawX)
+					this.noteList[this.draggingIndex].width += noteSize;
 				else
-					this.rectList[this.draggingIndex].width -= noteSize;
-				this.rectList[this.draggingIndex].rawX = RawX;
-				this.rectList[this.draggingIndex].fixedX = fixedX;
+					this.noteList[this.draggingIndex].width -= noteSize;
+				this.noteList[this.draggingIndex].rawX = RawX;
+				this.noteList[this.draggingIndex].fixedX = fixedX;
 				this.drawAll();
 			}
 		},
@@ -141,9 +145,9 @@ var app = new Vue({
 			const noteSize = this.defaultWidth / this.beat;
 			const h = this.height / this.keyboardRange;
 			//左端は変わらない
-			const left = this.rectList[this.draggingIndex].rawX;
+			const left = this.noteList[this.draggingIndex].rawX;
 			//右端も持つ
-			const right = left + this.rectList[this.draggingIndex].width;
+			const right = left + this.noteList[this.draggingIndex].width;
 			const fixedRight = right / (noteSize / (16 / this.beat));
 			//キャンバス上の位置がマス目の中でどの座標に位置するかを調べる
 			const RawX = Math.floor(x / noteSize) * noteSize;
@@ -154,16 +158,48 @@ var app = new Vue({
 			//fixedXの位置が変わっていれば、描画オブジェクトの位置を更新して描画
 			if (RawX > left && fixedX != fixedRight) {
 				if (RawX > right)
-					this.rectList[this.draggingIndex].width += noteSize;
+					this.noteList[this.draggingIndex].width += noteSize;
 				else
-					this.rectList[this.draggingIndex].width -= noteSize;
+					this.noteList[this.draggingIndex].width -= noteSize;
 				this.drawAll();
 			}
 		},
 		//ドラッグの終了
-		onMouseLeftUp: function () {
+		onMouseLeftUp: function (e) {
+			if(this.dragStatus==-1){
+				//移動量がx,yともに10pxに満たなければノート配置
+				//満たすなら矩形選択
+				//キャンバスの左上の座標を取得
+				const offsetX = this.canvas.getBoundingClientRect().left;
+				const offsetY = this.canvas.getBoundingClientRect().top;
+				//マウスが押されたcanvas上の座標を取得
+				const x = e.clientX - offsetX;
+				const y = e.clientY - offsetY;
+				if(Math.abs(x-this.relx)<10 && Math.abs(y-this.rely)<10){
+					this.addNote(e,this.color);
+				}else{
+					this.rectangleSelect(Math.min(x,this.relx),Math.min(y,this.rely),
+											Math.max(x,this.relx),Math.max(y,this.rely));
+				}
+			}
 			this.dragStatus = -1;
 			this.draggingIndex = -1;
+		},
+		//矩形選択
+		rectangleSelect:function(minx,miny,maxx,maxy){
+			//すべてのノートについて調べる(O(N))
+			for (let key in this.noteList) {
+				if (!((this.noteList[key].rawX+this.noteList[key].width<minx)||
+					  (this.noteList[key].rawX>maxx)||
+					  (this.noteList[key].rawY+this.noteList[key].height<miny)||
+					  (this.noteList[key].rawY>maxy)
+					 )
+				   ) {
+					this.nowSelect.push(key);
+					this.noteList[key].selected=true;
+				}
+			}
+			this.drawAll();
 		},
 		//右クリックしたときの処理
 		//クリックした場所が長方形の範囲内なら消す
@@ -177,7 +213,7 @@ var app = new Vue({
 			const y = e.clientY - offsetY;
 			const index = this.searchClickRect(x, y);
 			if (index != -1) {
-				delete (this.rectList[index]);
+				delete (this.noteList[index]);
 			}
 			this.drawAll();
 			return;
@@ -191,19 +227,29 @@ var app = new Vue({
 			//キャンバス上の位置がマス目の中でどこに位置するかを調べる
 			x = Math.floor(x / noteSize) * noteSize;
 			y = Math.floor(y / h) * h;
-			this.drawNote(x, y, noteSize, h, color);
-			this.rectList[this.rectNum]
-				= { rawX: x, rawY: y, fixedX: x / (noteSize / (16 / this.beat)), fixedY: y / h, width: noteSize, height: h, color: color };
+			this.drawNote(x, y, noteSize, h, color, false);
+			this.noteList[this.rectNum]
+				= { rawX: x, rawY: y, 
+					fixedX: x / (noteSize / (16 / this.beat)), fixedY: y / h, 
+					width: noteSize, height: h, 
+					color: color, selected:false };
 			this.rectNum++;
 			return;
 		},
 		//ノートの描画
-		drawNote: function (x, y, width, height, color) {
-			//ここを変える
+		drawNote: function (x, y, width, height, color, selected) {
+			if(selected)
+				this.context.globalAlpha = 0.2;
 			this.context.fillStyle = "#000000";
 			this.context.fillRect(x, y, width, height);
+			this.context.shadowBlur = 0;
+			this.context.shadowOffsetX = 0;
+			this.context.shadowOffsetY = 0;
+			if(selected)
+				this.context.globalAlpha = 0.6;
 			this.context.fillStyle = color;
 			this.context.fillRect(x + 2, y + 2, width - 4, height - 4);
+			this.context.globalAlpha = 1.0;
 		},
 		//描画のやり直し
 		drawAll: function () {
@@ -212,10 +258,10 @@ var app = new Vue({
 			this.drawAllNote();
 		},
 		drawAllNote: function () {
-			for (let key in this.rectList) {
-				this.drawNote(this.rectList[key].rawX, this.rectList[key].rawY,
-					this.rectList[key].width, this.rectList[key].height,
-					this.rectList[key].color);
+			for (let key in this.noteList) {
+				this.drawNote(this.noteList[key].rawX, this.noteList[key].rawY,
+					this.noteList[key].width, this.noteList[key].height,
+					this.noteList[key].color,this.noteList[key].selected);
 			}
 		},
 		drawDivider: function (beat) {
@@ -259,9 +305,6 @@ var app = new Vue({
 			this.context.stroke();
 			this.context.closePath();
 			return;
-		},
-		send: function () {
-			sendResult();
 		}
 	},
 	mounted: function () {

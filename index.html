@@ -20,7 +20,7 @@
 			<canvas id="myCanvas"
 			v-on:mousedown.left="onMouseLeftDown($event, color)"
 			v-on:mousemove="onDrag($event)"
-			v-on:mouseup.left="onMouseLeftUp()"
+			v-on:mouseup.left="onMouseLeftUp($event)"
 			v-on:mousedown.right="onMouseRightDown($event)">
 			</canvas>
 			<br>
