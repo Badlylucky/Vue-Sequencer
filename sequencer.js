@@ -10,6 +10,8 @@ var app = new Vue({
 		width: 640,
 		height: 900,
 		color: '#4169E1',
+		colorList: ['#4169E1'],
+		nowLayer: 0,
 		noteList: {},
 		rectNum: 0,
 		nowSelect: [],
@@ -28,12 +30,14 @@ var app = new Vue({
 			this.drawAllNote();
 			return;
 		},
+		changeColor : function(color){
+			this.colorList[this.nowLayer]=color;
+			this.drawAll();
+		},
 		//指定の座標にあるノートを探索する(O(N))
-		searchClickRect: function (mousex, mousey, checkNote = -1) {
+		searchClickRect: function (mousex, mousey) {
 			let ret = -1;
 			for (let key in this.noteList) {
-				if (key == checkNote)
-					continue;
 				if (this.noteList[key].rawX <= mousex && mousex < this.noteList[key].rawX + this.noteList[key].width &&
 					this.noteList[key].rawY <= mousey && mousey < this.noteList[key].rawY + this.noteList[key].height) {
 					ret = key;
@@ -367,7 +371,7 @@ var app = new Vue({
 			return;
 		},
 		//クリックした座標に長方形を追加
-		addNote: function (e, color) {
+		addNote: function (e) {
 			let x = e.layerX;
 			let y = e.layerY;
 			const h = this.height / this.keyboardRange;
@@ -375,19 +379,19 @@ var app = new Vue({
 			//キャンバス上の位置がマス目の中でどこに位置するかを調べる
 			x = Math.floor(x / noteSize) * noteSize;
 			y = Math.floor(y / h) * h;
-			this.drawNote(x, y, noteSize, h, color, false);
+			this.drawNote(x, y, noteSize, h, this.nowLayer, false);
 			this.noteList[this.rectNum]
 				= {
 				rawX: x, rawY: y,
 				fixedX: x / (noteSize / (16 / this.beat)), fixedY: y / h,
 				width: noteSize, height: h,
-				color: color, selected: false
+				layer: 0, selected: false
 			};
 			this.rectNum++;
 			return;
 		},
 		//ノートの描画
-		drawNote: function (x, y, width, height, color, selected) {
+		drawNote: function (x, y, width, height, layer, selected) {
 			if (selected)
 				this.context.globalAlpha = 0.2;
 			this.context.fillStyle = "#000000";
@@ -397,7 +401,7 @@ var app = new Vue({
 			this.context.shadowOffsetY = 0;
 			if (selected)
 				this.context.globalAlpha = 0.6;
-			this.context.fillStyle = color;
+			this.context.fillStyle = this.colorList[layer];
 			this.context.fillRect(x + 2, y + 2, width - 4, height - 4);
 			this.context.globalAlpha = 1.0;
 		},
@@ -411,7 +415,7 @@ var app = new Vue({
 			for (let key in this.noteList) {
 				this.drawNote(this.noteList[key].rawX, this.noteList[key].rawY,
 					this.noteList[key].width, this.noteList[key].height,
-					this.noteList[key].color, this.noteList[key].selected);
+					this.noteList[key].layer, this.noteList[key].selected);
 			}
 		},
 		drawDivider: function (beat) {

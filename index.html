@@ -7,7 +7,7 @@
 	<body>
 		<div id="app">
 			<h2>Draw Rectangle</h2>
-			<span>色</span><input type="color" v-model="color">
+			<span>色(layer0)</span><input type="color" v-model="color" v-on:change="changeColor(color)">
 			<span>大きさ</span><select v-model="beat" v-on:change="drawAll()">
 				<option value=1>1</option>
 				<option value=2>2</option>
