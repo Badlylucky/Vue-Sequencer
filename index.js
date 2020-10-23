@@ -14,6 +14,7 @@ var app = new Vue({
 		rectNum: 0,
 		nowSelect: [],
 		onPathNoteX: 0,
+		beforePosition: {x:-1,y:-1},
 		dragStatus: -1,
 		draggingIndex: -1,
 		relx: 0,
@@ -27,15 +28,38 @@ var app = new Vue({
 			this.drawAllNote();
 			return;
 		},
-		//クリックした位置にあるノートを探索する(O(N))
-		searchClickRect: function (mousex, mousey) {
+		//指定の座標にあるノートを探索する(O(N))
+		searchClickRect: function (mousex, mousey, checkNote=-1) {
 			let ret = -1;
 			for (let key in this.noteList) {
-				if (this.noteList[key].rawX < mousex && mousex < this.noteList[key].rawX + this.noteList[key].width &&
-					this.noteList[key].rawY < mousey && mousey < this.noteList[key].rawY + this.noteList[key].height) {
+				if(key == checkNote)
+					continue;
+				if (this.noteList[key].rawX <= mousex && mousex < this.noteList[key].rawX + this.noteList[key].width &&
+					this.noteList[key].rawY <= mousey && mousey < this.noteList[key].rawY + this.noteList[key].height) {
 					ret = key;
 					break;
 				}
+			}
+			return ret;
+		},
+		//指定のノートと被っているノートを探す(O(N))
+		searchOverlapNote: function(targetNote){
+			let ret=-1;
+			const targetXLeft = this.noteList[targetNote].rawX;
+			const targetXRight = targetXLeft + this.noteList[targetNote].width;
+			const targetY = this.noteList[targetNote].rawY;
+			for(let key in this.noteList){
+				if(key==targetNote)
+					continue;
+				if((targetY == this.noteList[key].rawY) &&
+				   !((this.noteList[key].rawX+this.noteList[key].width <= targetXLeft) ||
+					 (targetXRight <= this.noteList[key].rawX)
+				   )
+				){
+					ret=key;
+					break;
+				}
+
 			}
 			return ret;
 		},
@@ -92,6 +116,8 @@ var app = new Vue({
 					- Math.max(10, this.noteList[index].width / 8);
 				//真ん中ならノートの移動
 				if (left <= x && x <= right) {
+					this.beforePosition=
+					{x:this.noteList[index].rawX, y:this.noteList[index].rawY};
 					this.dragStatus = 1;
 				} else if (x < left) {
 					//左側なら左へ引き伸ばし
@@ -240,13 +266,54 @@ var app = new Vue({
 					this.draggingIndex = -1;
 					return;
 				}
-			}
-			if (this.nowSelect.length > 0 && this.dragStatus != 1) {
+			}else if (this.nowSelect.length > 0 && this.dragStatus != 1) {
+				//ノートの引き伸ばし
+				//選択の解除を行う
 				this.rectangleDeselect();
+				this.drawAll();
+			}else if(this.dragStatus == 1){
+				//（選択した）ノートの移動
+				this.checkOverlapNote();
+				if(this.nowSelect.length > 0){
+					this.rectangleDeselect();
+				}
 				this.drawAll();
 			}
 			this.dragStatus = -1;
 			this.draggingIndex = -1;
+		},
+		//移動したノートについて、重なりを判定して描画
+		//重なっていたら編集を差し戻す
+		checkOverlapNote: function(){
+			//矩形選択を挟まない場合
+			if(this.nowSelect.length == 0){
+				const res = this.searchOverlapNote(this.draggingIndex);
+				if(res!=-1){
+					//被っていたら編集を差し戻す
+					this.noteList[this.draggingIndex].rawX=this.beforePosition.x;
+					this.noteList[this.draggingIndex].rawY=this.beforePosition.y;
+					console.log("Error: Note already exists at destination");
+				}
+			}else{
+				//矩形選択を挟む場合
+				const difX=this.noteList[this.draggingIndex].rawX-this.beforePosition.x;
+				const difY=this.noteList[this.draggingIndex].rawY-this.beforePosition.y;
+				let res=true;
+				for(let i=0;i<this.nowSelect.length;i++){
+					if(this.searchOverlapNote(this.nowSelect[i])!=-1){
+						res=false;
+						break;
+					}
+				}
+				if(!res){
+					//ひとつでも被っていたら編集を差し戻す
+					console.log("Error: Note already exists at destination");
+					for(let i=0;i<this.nowSelect.length;i++){
+						this.noteList[this.nowSelect[i]].rawX-=difX;
+						this.noteList[this.nowSelect[i]].rawY-=difY;
+					}
+				}
+			}
 		},
 		//矩形選択
 		rectangleSelect: function (minx, miny, maxx, maxy) {
