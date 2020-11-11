@@ -385,6 +385,7 @@ var app = new Vue({
 				= {
 				rawX: x, rawY: y,
 				fixedX: x / (noteSize / (16 / this.beat)), fixedY: y / h,
+				length: noteSize/(this.defaultWidth/16),
 				width: noteSize, height: h,
 				layer: 0, selected: false
 			};
@@ -459,6 +460,30 @@ var app = new Vue({
 			this.context.lineTo(this.width, this.height);
 			this.context.stroke();
 			this.context.closePath();
+			return;
+		},
+		//startPositionからの譜面データをJSONで返す
+		getSequenceData:function(e){
+			const BPM=e.BPM; const startPosition=e.startPosition;
+			const data=[];
+			const delta=60.0/(BPM*16);
+			for (let key in this.noteList){
+				if(this.noteList[key].fixedX<startPosition)
+					continue;
+				data.push({
+					begin:delta*(this.noteList[key].fixedX-startPosition),
+					end:delta*(this.noteList[key].fixedX+this.noteList[key].length-startPosition),
+					key:-1*this.noteList[key].fixedY+83,
+					layer:this.noteList[key].layer
+				});
+			}
+			data.sort(function(a,b){
+				if(a.begin<b.begin)
+					return -1;
+				else
+					return 1;
+			});
+			this.$refs.player.getSequenceDataJSON(JSON.stringify(data));
 			return;
 		}
 	},

@@ -24,7 +24,7 @@
 			v-on:mousedown.right="onMouseRightDown($event)">
 			</canvas>
 			<br>
-			<player-component ref="player"></player-component>
+			<player-component ref="player" v-on:play="getSequenceData($event)"></player-component>
 			<div style="position: relative;top:300px;">
 				<p>Debug log(below)</p>
 				<span>{{$data}}</span>
