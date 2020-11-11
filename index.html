@@ -24,12 +24,14 @@
 			v-on:mousedown.right="onMouseRightDown($event)">
 			</canvas>
 			<br>
+			<player-component ref="player"></player-component>
 			<div style="position: relative;top:300px;">
 				<p>Debug log(below)</p>
 				<span>{{$data}}</span>
 			</div>
 		</div>
 		<script src="https://cdn.jsdelivr.net/npm/vue@2.5.13/dist/vue.js"></script>
+		<script src="player.js"></script>
 		<script src="sequencer.js"></script>
 	</body>
 </html>

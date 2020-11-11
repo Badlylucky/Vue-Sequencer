@@ -28,6 +28,7 @@ var app = new Vue({
 			this.canvas.width = this.width;
 			this.drawDivider(this.beat);
 			this.drawAllNote();
+			this.$refs.player.setSeekbarProps(this.width,this.width/this.defaultWidth*16);
 			return;
 		},
 		changeColor : function(color){
@@ -467,6 +468,7 @@ var app = new Vue({
 		this.canvas.width = this.width;
 		this.canvas.height = this.height;
 		this.drawDivider(this.beat);
+		this.$refs.player.setSeekbarProps(this.width,16);
 		document.oncontextmenu = function () { return false; };
 	}
 });
