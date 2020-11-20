@@ -6,16 +6,19 @@
 	</head>
 	<body>
 		<div id="app">
-			<span>色(layer0)</span><input type="color" v-model="color" v-on:change="changeColor(color)">
-			<span>大きさ</span><select v-model="beat" v-on:change="drawAll()">
-				<option value=1>1</option>
-				<option value=2>2</option>
-				<option value=4>4</option>
-				<option value=8>8</option>
-				<option value=16>16</option>
-				<option value=32>32</option>
-			</select>
-			<button v-on:click="expandCanvas()">キャンバスを広げる</button>
+			<div class="center">
+				<span>色(layer0)</span><input type="color" v-model="color" v-on:change="changeColor(color)">
+				<span>大きさ</span>
+				<select v-model="beat" v-on:change="drawAll()">
+					<option value=1>1</option>
+					<option value=2>2</option>
+					<option value=4>4</option>
+					<option value=8>8</option>
+					<option value=16>16</option>
+					<option value=32>32</option>
+				</select>
+				<button v-on:click="expandCanvas()">キャンバスを広げる</button>
+			</div>
 			<br>
 			<canvas id="myCanvas"
 			v-on:mousedown.left="onMouseLeftDown($event, color)"
@@ -25,11 +28,6 @@
 			</canvas>
 			<br>
 			<player-component ref="player" v-on:play="getSequenceData($event)"></player-component>
-			
-			<div style="position: relative;top:300px;">
-				<p>Debug log(sequencer)</p>
-				<span>{{$data}}</span>
-			</div>
 		</div>
 		<script src="https://cdn.jsdelivr.net/npm/vue@2.5.13/dist/vue.js"></script>
 		<script src="timer.js"></script>

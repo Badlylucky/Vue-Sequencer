@@ -5,18 +5,18 @@ Vue.component('player-component', {
 		v-bind:style="{width:seekBarWidth}"
 		v-model:value=seekBarPoint>
 		<br>
-		<button style="left:50%"
-		v-on:click="sequencePlay()">
-		  <span v-if=nowPlaying>&#9209;</span>
-		  <span v-else>&#9205;</span>
-		</button>
-		<span>BPM</span>
-		<input type="tel" v-model:value=BPM>
-		<input type="range" min="40" max="180" step="1" v-model:value=BPM> 
+		<div class="center">
+			<button style="left:50%"
+			  v-on:click="sequencePlay()">
+		  		<span v-if=nowPlaying>&#9209;</span>
+		  		<span v-else>&#9205;</span>
+			</button>
+			<span>BPM</span>
+			<input type="tel" v-model:value=BPM>
+			<input type="range" min="40" max="180" step="1" v-model:value=BPM> 
+		</div>
 		<br>
 		<timer-component ref="timer" v-on:tick=noteScheduler()></timer-component>
-		<p>debug log(player)</p>
-		<span>{{$data}}</span>
 	</div>
 	`,
 	data: function () {
