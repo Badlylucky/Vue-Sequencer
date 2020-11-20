@@ -12,7 +12,8 @@ Vue.component('player-component', {
 		  		<span v-else>&#9205;</span>
 			</button>
 			<span>BPM</span>
-			<input type="tel" v-model:value=BPM>
+			<input type="tel" v-model:value=BPM
+			v-on:blur="function(){BPM=clampInput(BPM,40,180,120);}">
 			<input type="range" min="40" max="180" step="1" v-model:value=BPM> 
 		</div>
 		<br>
@@ -165,6 +166,21 @@ Vue.component('player-component', {
 					break;
 			}
 			return basefreq * Math.pow(2.0, (note - basenote) / 12);
+		},
+		//textboxに入力された値を補正する
+		clampInput: function (value, min, max, defVal) {
+			let ret;
+			var regexp = new RegExp(/^[+,-]?([1-9]\d*|0)(\.\d+)?$/);
+			if (!regexp.test(value)) {
+				ret = defVal;
+			} else if (value < min) {
+				ret = min;
+			} else if (value > max) {
+				ret = max;
+			} else {
+				ret = value;
+			}
+			return ret;
 		},
 		debuglog: function () {
 			console.log(this.audioContext.currentTime);
