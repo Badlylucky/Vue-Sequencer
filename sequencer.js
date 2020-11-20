@@ -8,7 +8,7 @@ var app = new Vue({
 		defaultWidth: 640,
 		beat: 4,
 		width: 640,
-		height: 900,
+		height: 828,
 		color: '#4169E1',
 		colorList: ['#4169E1'],
 		nowLayer: 0,
@@ -28,11 +28,11 @@ var app = new Vue({
 			this.canvas.width = this.width;
 			this.drawDivider(this.beat);
 			this.drawAllNote();
-			this.$refs.player.setSeekbarProps(this.width,this.width/this.defaultWidth*32);
+			this.$refs.player.setSeekbarProps(this.width, this.width / this.defaultWidth * 32);
 			return;
 		},
-		changeColor : function(color){
-			this.colorList[this.nowLayer]=color;
+		changeColor: function (color) {
+			this.colorList[this.nowLayer] = color;
 			this.drawAll();
 		},
 		//指定の座標にあるノートを探索する(O(N))
@@ -216,12 +216,12 @@ var app = new Vue({
 			//元のノートの右端より右に行っていない　かつ　onPathNoteXに到達していない　かつ
 			//fixedXの位置が変わっていれば、描画オブジェクトの位置を更新して描画
 			if (RawX < right && fixedX != this.noteList[this.draggingIndex].fixedX && RawX > this.onPathNoteX) {
-				if (RawX < this.noteList[this.draggingIndex].rawX){
+				if (RawX < this.noteList[this.draggingIndex].rawX) {
 					this.noteList[this.draggingIndex].width += noteSize;
-					this.noteList[this.draggingIndex].length += 32/this.beat;
-				}else{
+					this.noteList[this.draggingIndex].length += 32 / this.beat;
+				} else {
 					this.noteList[this.draggingIndex].width -= noteSize;
-					this.noteList[this.draggingIndex].length -= 32/this.beat;
+					this.noteList[this.draggingIndex].length -= 32 / this.beat;
 				}
 				this.noteList[this.draggingIndex].rawX = RawX;
 				this.noteList[this.draggingIndex].fixedX = fixedX;
@@ -245,12 +245,12 @@ var app = new Vue({
 			//左端より左に行っていない　かつ　
 			//fixedXの位置が変わっていれば、描画オブジェクトの位置を更新して描画
 			if (RawX > left && fixedX != fixedRight && RawX < this.onPathNoteX) {
-				if (RawX > right){
+				if (RawX > right) {
 					this.noteList[this.draggingIndex].width += noteSize;
-					this.noteList[this.draggingIndex].length += 32/this.beat;
-				}else{
+					this.noteList[this.draggingIndex].length += 32 / this.beat;
+				} else {
 					this.noteList[this.draggingIndex].width -= noteSize;
-					this.noteList[this.draggingIndex].length -= 32/this.beat;
+					this.noteList[this.draggingIndex].length -= 32 / this.beat;
 				}
 				this.drawAll();
 			}
@@ -391,7 +391,7 @@ var app = new Vue({
 				= {
 				rawX: x, rawY: y,
 				fixedX: x / (noteSize / (32 / this.beat)), fixedY: y / h,
-				length: noteSize/(this.defaultWidth/32),
+				length: noteSize / (this.defaultWidth / 32),
 				width: noteSize, height: h,
 				layer: 0, selected: false
 			};
@@ -469,29 +469,29 @@ var app = new Vue({
 			return;
 		},
 		//startPositionからの譜面データをJSONで返す
-		getSequenceData:function(e){
-			const BPM=e.BPM; const startPosition=e.startPosition;
-			const data=[];
-			const delta=60.0/(BPM*8);
-			for (let key in this.noteList){
-				if(this.noteList[key].fixedX<startPosition)
+		getSequenceData: function (e) {
+			const BPM = e.BPM; const startPosition = e.startPosition;
+			const data = [];
+			const delta = 60.0 / (BPM * 8);
+			for (let key in this.noteList) {
+				if (this.noteList[key].fixedX < startPosition)
 					continue;
 				data.push({
-					begin:delta*(this.noteList[key].fixedX-startPosition),
-					end:delta*(this.noteList[key].fixedX+this.noteList[key].length-startPosition),
-					key:-1*this.noteList[key].fixedY+83,
-					layer:this.noteList[key].layer
+					begin: delta * (this.noteList[key].fixedX - startPosition),
+					end: delta * (this.noteList[key].fixedX + this.noteList[key].length - startPosition),
+					key: -1 * this.noteList[key].fixedY + 83,
+					layer: this.noteList[key].layer
 				});
 			}
 			//終点を意味するダミーノードを追加する
 			data.push({
-				begin:delta*(32*(this.width/this.defaultWidth)-startPosition)+1.0,
-				end:delta*(32*(this.width/this.defaultWidth)-startPosition)+1.0,
-				key:-1,
-				layer:-1
+				begin: delta * (32 * (this.width / this.defaultWidth) - startPosition) + 1.0,
+				end: delta * (32 * (this.width / this.defaultWidth) - startPosition) + 1.0,
+				key: -1,
+				layer: -1
 			});
-			data.sort(function(a,b){
-				if(a.begin<b.begin)
+			data.sort(function (a, b) {
+				if (a.begin < b.begin)
 					return -1;
 				else
 					return 1;
@@ -506,7 +506,7 @@ var app = new Vue({
 		this.canvas.width = this.width;
 		this.canvas.height = this.height;
 		this.drawDivider(this.beat);
-		this.$refs.player.setSeekbarProps(this.width,32);
+		this.$refs.player.setSeekbarProps(this.width, 32);
 		document.oncontextmenu = function () { return false; };
 	}
 });

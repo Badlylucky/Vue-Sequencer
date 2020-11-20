@@ -1,12 +1,11 @@
 <html lang="ja">
 	<head>
 		<meta charset="utf-8">
-		<title>Draw Rectangle</title>
+		<title>Vue-Sequencer</title>
 		<link href="style.css" rel="stylesheet">
 	</head>
 	<body>
 		<div id="app">
-			<h2>Draw Rectangle</h2>
 			<span>色(layer0)</span><input type="color" v-model="color" v-on:change="changeColor(color)">
 			<span>大きさ</span><select v-model="beat" v-on:change="drawAll()">
 				<option value=1>1</option>
